@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Money Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════ */
+:root {
+  /* palette */
+  --white:       #ffffff;
+  --bg:          #f6f8f4;
+  --bg2:         #eef2ea;
+  --card:        #ffffff;
+  --border:      #dde8d5;
+  --border2:     #c8ddb8;
+
+  /* greens */
+  --g900:  #14532d;
+  --g700:  #15803d;
+  --g500:  #22c55e;
+  --g400:  #4ade80;
+  --g200:  #bbf7d0;
+  --g100:  #dcfce7;
+  --g50:   #f0fdf4;
+
+  /* yellows */
+  --y500:  #eab308;
+  --y400:  #facc15;
+  --y200:  #fef08a;
+  --y100:  #fefce8;
+  --y50:   #fffde7;
+
+  /* text */
+  --tx:    #1a2e1a;
+  --tx2:   #3d5c3d;
+  --tx3:   #7a9a7a;
+  --tx4:   #a8c4a8;
+
+  /* status */
+  --red:   #ef4444;
+  --red-lt:#fef2f2;
+
+  /* sizing */
+  --r:     12px;
+  --r2:    8px;
+  --shadow-sm: 0 1px 4px rgba(20,83,45,.06);
+  --shadow:    0 4px 16px rgba(20,83,45,.08);
+  --shadow-lg: 0 12px 40px rgba(20,83,45,.12);
+
+  /* type */
+  --fh: 'Playfair Display', Georgia, serif;
+  --fb: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--fb);
+  background: var(--bg);
+  color: var(--tx);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+button, input, select, textarea { font-family: var(--fb); }
+
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════════ */
+.layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════════ */
+.sidebar {
+  background: var(--g900);
+  padding: 0;
+  position: sticky; top: 0; height: 100vh;
+  display: flex; flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.brand-eyebrow {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--g400); margin-bottom: 4px;
+}
+.brand-name {
+  font-family: var(--fh); font-size: 22px; font-weight: 700;
+  color: var(--white); line-height: 1;
+}
+.brand-name em { color: var(--y400); font-style: italic; font-weight: 400; }
+
+.sidebar-user {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--g700); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--g200); flex-shrink: 0;
+}
+.user-select {
+  background: transparent; border: none; color: rgba(255,255,255,.7);
+  font-family: var(--fb); font-size: 12px; cursor: pointer;
+  width: 100%; outline: none;
+}
+.user-select option { background: var(--g900); color: var(--white); }
+
+.sidebar-nav { padding: 16px 12px; flex: 1; }
+.nav-label {
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,.3); padding: 8px 8px 6px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: var(--r2);
+  border: none; background: transparent; color: rgba(255,255,255,.55);
+  font-size: 12.5px; font-weight: 500; cursor: pointer; width: 100%; text-align: left;
+  transition: background .15s, color .15s;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); }
+.nav-item.active {
+  background: var(--y400); color: var(--g900);
+}
+.nav-item .nav-icon { font-size: 14px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; font-size: 9px; padding: 1px 6px; border-radius: 99px;
+  background: rgba(255,255,255,.12); color: rgba(255,255,255,.5);
+}
+.nav-item.active .nav-badge { background: rgba(20,83,45,.2); color: var(--g900); }
+
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-footer-text { font-size: 10px; color: rgba(255,255,255,.25); text-align: center; }
+
+/* ═══════════════════════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════════════════════ */
+.main { display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+
+/* ── Topbar ── */
+.topbar {
+  background: var(--white); border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 56px;
+  display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+.topbar-title { font-family: var(--fh); font-size: 18px; font-weight: 500; flex: 1; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-date { font-size: 11px; color: var(--tx3); }
+.topbar-sync {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 5px 12px; border-radius: 99px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--tx2);
+  cursor: pointer; transition: all .15s;
+}
+.topbar-sync:hover { border-color: var(--g500); color: var(--g700); }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--g500); }
+.sync-dot.loading { animation: blink 1s infinite; background: var(--y500); }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.2} }
+
+/* ── Content ── */
+.content { overflow-y: auto; flex: 1; }
+
+/* ── Pages ── */
+.page { display: none; padding: 24px 28px 60px; animation: fadeUp .3s ease; }
+.page.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ═══════════════════════════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════════════════════════ */
+.section-label {
+  font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--tx3); margin-bottom: 12px; font-weight: 600;
+}
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px 22px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s, transform .15s;
+}
+.card:hover { box-shadow: var(--shadow); }
+.card-title { font-family: var(--fh); font-size: 15px; font-weight: 500; margin-bottom: 3px; }
+.card-sub { font-size: 11px; color: var(--tx3); margin-bottom: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+.gap-14 { gap: 14px; }
+
+/* delta badges */
+.delta { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; margin-top: 6px; }
+.delta.pos { background: var(--g100); color: var(--g700); }
+.delta.neg { background: var(--red-lt); color: var(--red); }
+.delta.neu { background: var(--bg2); color: var(--tx3); }
+
+/* progress bar */
+.prog-track { height: 6px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 99px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+
+/* btn */
+.btn {
+  border: none; border-radius: var(--r2); font-family: var(--fb);
+  font-size: 12px; font-weight: 600; padding: 8px 16px; cursor: pointer;
+  transition: opacity .15s, transform .1s;
+}
+.btn:hover { opacity: .88; }
+.btn:active { transform: scale(.97); }
+.btn-green { background: var(--g700); color: var(--white); }
+.btn-yellow { background: var(--y400); color: var(--g900); }
+.btn-ghost {
+  background: var(--bg); border: 1px solid var(--border); color: var(--tx2);
+}
+.btn-ghost:hover { border-color: var(--border2); }
+
+/* input */
+.inp {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r2);
+  color: var(--tx); font-family: var(--fb); font-size: 12px; padding: 8px 12px;
+  width: 100%; outline: none; transition: border-color .15s;
+}
+.inp:focus { border-color: var(--g500); background: var(--white); }
+.inp::placeholder { color: var(--tx4); }
+
+/* pill filter */
+.pill-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.pill {
+  border: 1px solid var(--border); border-radius: 99px; background: var(--white);
+  color: var(--tx2); font-family: var(--fb); font-size: 11px; font-weight: 500;
+  padding: 4px 13px; cursor: pointer; transition: all .15s;
+}
+.pill:hover { border-color: var(--g500); color: var(--g700); }
+.pill.active { background: var(--g700); border-color: var(--g700); color: var(--white); }
+.pill.active-y { background: var(--y400); border-color: var(--y400); color: var(--g900); }
+
+/* ═══════════════════════════════════════════════════════════
+   CONFIG OVERLAY
+═══════════════════════════════════════════════════════════ */
+#cfg-overlay {
+  position: fixed; inset: 0; background: rgba(20,83,45,.85); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.cfg-box {
+  background: var(--white); border-radius: 16px; padding: 36px 32px;
+  width: 440px; box-shadow: var(--shadow-lg); animation: fadeUp .3s ease;
+}
+.cfg-box h2 { font-family: var(--fh); font-size: 24px; margin-bottom: 6px; }
+.cfg-box p  { font-size: 12px; color: var(--tx3); line-height: 1.7; margin-bottom: 20px; }
+.cfg-steps { background: var(--g50); border: 1px solid var(--g200); border-radius: var(--r2); padding: 14px 16px; margin-bottom: 18px; }
+.cfg-steps li { font-size: 11.5px; color: var(--tx2); line-height: 1.9; margin-left: 16px; }
+.cfg-input-row { display: flex; gap: 8px; }
+.cfg-url { flex: 1; }
+.cfg-mode { display: flex; gap: 8px; margin-bottom: 14px; }
+.mode-btn {
+  flex: 1; padding: 8px; border-radius: var(--r2); border: 1px solid var(--border);
+  background: var(--bg); color: var(--tx2); font-size: 11px; font-weight: 500; cursor: pointer; transition: all .15s;
+}
+.mode-btn.active { background: var(--g700); border-color: var(--g700); color: var(--white); }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: DASHBOARD
+═══════════════════════════════════════════════════════════ */
+
+/* KPI grid */
+.kpi-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 18px; }
+.kpi {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px 18px; position: relative; overflow: hidden;
+  transition: box-shadow .2s, transform .15s; box-shadow: var(--shadow-sm);
+}
+.kpi:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kc, var(--border));
+}
+.kpi-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; margin-bottom: 10px;
+}
+.kpi-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--tx3); margin-bottom: 6px; }
+.kpi-value { font-family: var(--fh); font-size: 22px; font-weight: 700; line-height: 1; }
+.kpi.hero { background: linear-gradient(135deg, var(--g900) 0%, var(--g700) 100%); border-color: transparent; }
+.kpi.hero .kpi-label { color: rgba(255,255,255,.55); }
+.kpi.hero .kpi-value { color: var(--white); }
+.kpi.hero::before { background: var(--y400); }
+.kpi.yellow { background: var(--y50); border-color: var(--y200); }
+.kpi.yellow .kpi-value { color: var(--g900); }
+
+/* Target progress */
+.target-card { grid-column: span 2; }
+.target-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--tx3); margin-top: 6px; }
+
+/* Dash layout */
+.dash-charts { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; margin-bottom: 14px; }
+.dash-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: ANALYTICS
+═══════════════════════════════════════════════════════════ */
+.analytics-compare {
+  display: grid; grid-template-columns: 1fr 1px 1fr; gap: 0;
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--r);
+  overflow: hidden; box-shadow: var(--shadow-sm); margin-bottom: 14px;
+}
+.compare-divider { background: var(--border); }
+.compare-col { padding: 22px 24px; }
+.compare-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--tx3); margin-bottom: 6px; }
+.compare-value { font-family: var(--fh); font-size: 34px; font-weight: 700; line-height: 1; }
+.compare-sub { font-size: 11px; color: var(--tx3); margin-top: 4px; }
+.mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-top: 10px; }
+.mini-bar { flex: 1; border-radius: 2px 2px 0 0; transition: height .5s ease; }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: TASKS
+═══════════════════════════════════════════════════════════ */
+.task-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+
+.task-date-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.task-date-chip {
+  font-size: 11px; padding: 5px 14px; border-radius: 99px;
+  background: var(--g900); color: var(--white);
+}
+
+.bucket { margin-bottom: 18px; }
+.bucket-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: var(--r2);
+  margin-bottom: 6px;
+}
+.bucket-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.bucket-name { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+.bucket-prog { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.bucket-prog-track { width: 50px; height: 3px; background: rgba(0,0,0,.08); border-radius: 99px; overflow: hidden; }
+.bucket-prog-fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
+.bucket-count { font-size: 10px; color: var(--tx3); }
+
+.task-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: var(--r2);
+  border: 1px solid transparent; transition: background .15s, border-color .15s;
+  animation: fadeUp .2s ease;
+}
+.task-item:hover { background: var(--bg); border-color: var(--border); }
+.task-item.done { opacity: .5; }
+.task-item.done .task-text { text-decoration: line-through; color: var(--tx3); }
+.task-check {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border2); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .15s;
+}
+.task-check.done { background: var(--g500); border-color: var(--g500); }
+.task-check.done::after { content: '✓'; font-size: 9px; color: var(--white); }
+.task-text { flex: 1; font-size: 12.5px; line-height: 1.5; }
+.task-type-badge {
+  font-size: 9px; padding: 2px 7px; border-radius: 99px; flex-shrink: 0; font-weight: 600;
+}
+.task-del { background: none; border: none; color: var(--tx4); cursor: pointer; opacity: 0; font-size: 11px; transition: opacity .15s, color .15s; }
+.task-item:hover .task-del { opacity: 1; }
+.task-del:hover { color: var(--red); }
+.task-empty { font-size: 11px; color: var(--tx4); padding: 12px 12px; font-style: italic; }
+
+/* Task sidebar */
+.task-stat { text-align: center; padding: 14px; }
+.task-stat-value { font-family: var(--fh); font-size: 26px; font-weight: 700; }
+.task-stat-label { font-size: 10px; color: var(--tx3); margin-top: 2px; }
+
+.add-task-form { display: flex; flex-direction: column; gap: 8px; }
+.task-compare { margin-top: 4px; }
+.compare-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.compare-row:last-child { border-bottom: none; }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: PROMPTS
+═══════════════════════════════════════════════════════════ */
+.prompt-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 12px; }
+.prompt-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+  transition: box-shadow .2s, transform .15s; box-shadow: var(--shadow-sm);
+  animation: fadeUp .25s ease both;
+}
+.prompt-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+.prompt-card-top { display: flex; align-items: center; gap: 8px; }
+.p-cat-badge { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; padding: 3px 9px; border-radius: 99px; }
+.p-num { font-size: 10px; color: var(--tx4); margin-left: auto; }
+.p-text { font-size: 12px; line-height: 1.75; color: var(--tx2); flex: 1; }
+.copy-btn {
+  align-self: flex-end; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r2); color: var(--tx3); font-size: 10px; font-weight: 500;
+  padding: 4px 11px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+  transition: all .15s;
+}
+.copy-btn:hover { background: var(--g50); border-color: var(--g200); color: var(--g700); }
+.copy-btn.copied { background: var(--g100); border-color: var(--g200); color: var(--g700); }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE: IDEAS
+═══════════════════════════════════════════════════════════ */
+.idea-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 10px; }
+.idea-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r);
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 7px;
+  transition: box-shadow .15s, transform .15s; box-shadow: var(--shadow-sm);
+  animation: fadeUp .2s ease both;
+}
+.idea-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+.idea-cat { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; padding: 2px 8px; border-radius: 99px; align-self: flex-start; }
+.idea-name { font-family: var(--fh); font-size: 13.5px; font-weight: 500; line-height: 1.3; }
+.idea-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+.idea-diff, .idea-profit { font-size: 9px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+.diff-easy   { background: var(--g100); color: var(--g700); }
+.diff-medium { background: var(--y100); color: #92400e; }
+.diff-hard   { background: var(--red-lt); color: var(--red); }
+.profit-low  { background: var(--bg2); color: var(--tx3); }
+.profit-med  { background: #dbeafe; color: #1d4ed8; }
+.profit-high { background: var(--y100); color: #92400e; }
+.profit-vhigh{ background: var(--g100); color: var(--g700); }
+.idea-stars  { margin-left: auto; display: flex; gap: 1px; }
+.star        { font-size: 9px; }
+
+/* ═══════════════════════════════════════════════════════════
+   EARN FORM
+═══════════════════════════════════════════════════════════ */
+.earn-form { display: flex; gap: 8px; align-items: flex-end; }
+.earn-form .inp-group { flex: 1; }
+.inp-label { font-size: 10px; color: var(--tx3); margin-bottom: 4px; font-weight: 500; }
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--g900); color: var(--white); border-radius: var(--r);
+  padding: 10px 18px; font-size: 12px;
+  opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 9999;
+  box-shadow: var(--shadow-lg);
+}
+#toast.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3,1fr); }
+  .target-card { grid-column: span 1; }
+}
+@media (max-width: 960px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .dash-charts, .task-layout { grid-template-columns: 1fr; }
+  .dash-bottom, .grid-3 { grid-template-columns: 1fr 1fr; }
+  .page { padding: 16px 14px 48px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); }
+  .analytics-compare { grid-template-columns: 1fr; }
+  .compare-divider { height: 1px; }
+}
+@media (max-width: 620px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .grid-2, .grid-4, .dash-bottom { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Config overlay -->
+<div id="cfg-overlay">
+  <div class="cfg-box">
+    <h2>Connect Your Dashboard</h2>
+    <p>Choose demo mode to use local data instantly, or connect to your Google Sheets for live data.</p>
+    <div class="cfg-mode">
+      <button class="mode-btn active" id="mode-demo" onclick="setMode('demo')">⚡ Demo Mode</button>
+      <button class="mode-btn" id="mode-live" onclick="setMode('live')">🔗 Live (Google Sheets)</button>
+    </div>
+    <div id="api-url-section" style="display:none">
+      <div class="cfg-steps" style="margin-bottom:14px">
+        <ol>
+          <li>Open Google Sheets → Extensions → Apps Script</li>
+          <li>Paste <strong>Code.gs</strong> and run <code>setupSheets()</code></li>
+          <li>Deploy → New Deployment → Web App (Anyone)</li>
+          <li>Copy the Web App URL below</li>
+        </ol>
+      </div>
+      <div class="cfg-input-row">
+        <input class="inp cfg-url" id="api-url" type="url" placeholder="https://script.google.com/macros/s/.../exec"/>
+        <button class="btn btn-ghost" onclick="testApi()">Test</button>
+      </div>
+      <div id="api-status" style="font-size:11px;margin-top:6px;color:var(--tx3)"></div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-green" style="width:100%;padding:11px;font-size:13px" onclick="startApp()">Launch Dashboard →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shell -->
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-eyebrow">Money Dashboard</div>
+      <div class="brand-name">Growth <em>OS</em></div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar">A</div>
+      <select class="user-select" id="user-select" onchange="switchUser()">
+        <option value="demo">Demo User</option>
+      </select>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <button class="nav-item active" onclick="navTo('dashboard',this)">
+        <span class="nav-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="navTo('analytics',this)">
+        <span class="nav-icon">▲</span> Analytics
+      </button>
+      <div class="nav-label">Work</div>
+      <button class="nav-item" onclick="navTo('tasks',this)">
+        <span class="nav-icon">☰</span> Tasks
+        <span class="nav-badge" id="nav-tasks-badge">0</span>
+      </button>
+      <div class="nav-label">Library</div>
+      <button class="nav-item" onclick="navTo('prompts',this)">
+        <span class="nav-icon">❝</span> Prompt Vault
+        <span class="nav-badge">80</span>
+      </button>
+      <button class="nav-item" onclick="navTo('ideas',this)">
+        <span class="nav-icon">✦</span> Idea Vault
+        <span class="nav-badge">100</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text" id="footer-mode">Demo Mode</div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-date" id="topbar-date">—</div>
+        <button class="topbar-sync" onclick="syncData()" id="sync-btn">
+          <div class="sync-dot" id="sync-dot"></div> Sync
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════ DASHBOARD ══════ -->
+      <div class="page active" id="page-dashboard">
+        <!-- KPI Cards -->
+        <div class="section-label">Overview</div>
+        <div class="kpi-grid" id="kpi-grid">
+          <!-- filled by JS -->
+        </div>
+
+        <!-- Earn Form -->
+        <div style="margin-bottom:18px">
+          <div class="card" style="padding:14px 18px">
+            <div class="card-title" style="margin-bottom:10px">Quick Add Earning</div>
+            <div class="earn-form">
+              <div class="inp-group">
+                <div class="inp-label">Amount ($)</div>
+                <input class="inp" id="earn-amount" type="number" min="0" placeholder="e.g. 250"/>
+              </div>
+              <div class="inp-group">
+                <div class="inp-label">Date</div>
+                <input class="inp" id="earn-date" type="date"/>
+              </div>
+              <button class="btn btn-green" style="height:36px;margin-top:auto" onclick="addEarning()">+ Add</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="dash-charts" style="margin-bottom:14px">
+          <div class="card">
+            <div class="card-title">Earnings Trend</div>
+            <div class="card-sub">14-day rolling window</div>
+            <canvas id="ch-trend" height="85"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">Today vs Yesterday</div>
+            <div class="card-sub">Direct comparison</div>
+            <canvas id="ch-compare" height="110"></canvas>
+          </div>
+        </div>
+        <div class="dash-bottom">
+          <div class="card">
+            <div class="card-title">Weekly Growth</div>
+            <div class="card-sub">This week by day <span id="week-badge" style="font-size:10px;padding:2px 8px;border-radius:99px;background:var(--g100);color:var(--g700);margin-left:4px"></span></div>
+            <canvas id="ch-weekly" height="100"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">Task Completion</div>
+            <div class="card-sub">7-day % trend</div>
+            <canvas id="ch-tasks-dash" height="100"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:12px">Today's Tasks</div>
+            <div id="dash-task-buckets"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ ANALYTICS ══════ -->
+      <div class="page" id="page-analytics">
+        <div class="section-label">Comparison Engine</div>
+        <div class="analytics-compare" style="margin-bottom:14px">
+          <div class="compare-col">
+            <div class="compare-label">Today's Earnings</div>
+            <div class="compare-value" id="an-today">—</div>
+            <div class="compare-sub" id="an-today-sub">vs yesterday</div>
+            <div class="mini-bars" id="mb-today"></div>
+          </div>
+          <div class="compare-divider"></div>
+          <div class="compare-col">
+            <div class="compare-label">Yesterday's Earnings</div>
+            <div class="compare-value" id="an-yest">—</div>
+            <div class="compare-sub" id="an-yest-sub">prior day</div>
+            <div class="mini-bars" id="mb-yest"></div>
+          </div>
+        </div>
+        <div class="grid-2 gap-14" style="margin-bottom:14px">
+          <div class="card">
+            <div class="card-title">This Week vs Last Week</div>
+            <div class="card-sub">Day-by-day overlay</div>
+            <canvas id="ch-ww" height="110"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">14-Day Earnings</div>
+            <div class="card-sub">Full rolling window</div>
+            <canvas id="ch-14d" height="110"></canvas>
+          </div>
+        </div>
+        <div class="grid-3 gap-14">
+          <div class="card">
+            <div class="card-title">Task Completion %</div>
+            <div class="card-sub">7-day trend</div>
+            <canvas id="ch-tc" height="100"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">Today Hourly</div>
+            <div class="card-sub">Revenue by hour</div>
+            <canvas id="ch-hourly" height="100"></canvas>
+          </div>
+          <div class="card" id="an-insights">
+            <div class="card-title" style="margin-bottom:12px">Auto Insights</div>
+            <div id="insight-list" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ TASKS ══════ -->
+      <div class="page" id="page-tasks">
+        <div class="task-layout">
+          <div>
+            <div class="section-label">Task Engine</div>
+            <div class="task-date-nav">
+              <button class="btn btn-ghost" style="padding:5px 12px" onclick="taskNav(-1)">← Prev</button>
+              <div class="task-date-chip" id="task-date-chip">Today</div>
+              <button class="btn btn-ghost" style="padding:5px 12px" id="task-next-btn" onclick="taskNav(1)">Next →</button>
+            </div>
+            <!-- Master progress -->
+            <div class="card" style="padding:14px 18px;margin-bottom:14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:11px;color:var(--tx3)">Daily Progress</span>
+                <span style="font-family:var(--fh);font-size:18px;font-weight:700" id="task-pct-label">0%</span>
+              </div>
+              <div class="prog-track">
+                <div class="prog-fill" id="task-master-fill" style="width:0%;background:linear-gradient(90deg,var(--g500),var(--y400))"></div>
+              </div>
+              <div id="task-seg-bars" style="display:flex;gap:6px;margin-top:8px"></div>
+            </div>
+            <div id="task-buckets"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <!-- Stats -->
+            <div class="card" style="padding:0">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid var(--border)">
+                <div class="task-stat" style="border-right:1px solid var(--border)">
+                  <div class="task-stat-value" id="ts-done">0/0</div>
+                  <div class="task-stat-label">Done / Total</div>
+                </div>
+                <div class="task-stat">
+                  <div class="task-stat-value" id="ts-pct">0%</div>
+                  <div class="task-stat-label">Completion</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+                <div class="task-stat" style="border-right:1px solid var(--border)">
+                  <div class="task-stat-value" id="ts-hours">0h</div>
+                  <div class="task-stat-label">Hours Total</div>
+                </div>
+                <div class="task-stat">
+                  <div class="task-stat-value" id="ts-cleared">0h</div>
+                  <div class="task-stat-label">Hours Cleared</div>
+                </div>
+              </div>
+            </div>
+            <!-- Add -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:10px">Add Task</div>
+              <div class="add-task-form">
+                <input class="inp" id="new-task-text" placeholder="Task description…" onkeydown="if(event.key==='Enter')addTask()"/>
+                <select class="inp" id="new-task-type" style="padding:7px 10px">
+                  <option value="1h">⏱ 1-Hour Task</option>
+                  <option value="3h">⏳ 3-Hour Task</option>
+                  <option value="fd">📅 Full Day Task</option>
+                </select>
+                <button class="btn btn-green" style="width:100%" onclick="addTask()">+ Add Task</button>
+              </div>
+            </div>
+            <!-- vs Yesterday -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:8px">vs Yesterday</div>
+              <div id="task-compare-panel"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ PROMPTS ══════ -->
+      <div class="page" id="page-prompts">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="section-label" style="margin-bottom:0">Prompt Vault — 80 Prompts</div>
+          <input class="inp" id="p-search" style="width:220px" placeholder="Search prompts…" oninput="renderPrompts()"/>
+        </div>
+        <div class="pill-row" id="p-cat-pills">
+          <button class="pill active" onclick="setPromptCat('all',this)">All</button>
+          <button class="pill" onclick="setPromptCat('Money',this)">💰 Money</button>
+          <button class="pill" onclick="setPromptCat('Sales',this)">🔥 Sales</button>
+          <button class="pill" onclick="setPromptCat('Content',this)">✍️ Content</button>
+          <button class="pill" onclick="setPromptCat('Automation',this)">⚡ Automation</button>
+        </div>
+        <div id="prompt-grid" class="prompt-grid"></div>
+      </div>
+
+      <!-- ══════ IDEAS ══════ -->
+      <div class="page" id="page-ideas">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="section-label" style="margin-bottom:0">Idea Vault — 100 Business Ideas</div>
+          <input class="inp" id="i-search" style="width:220px" placeholder="Search ideas…" oninput="renderIdeas()"/>
+        </div>
+        <div class="pill-row">
+          <button class="pill active" onclick="setIdeaCat('all',this)">All</button>
+          <button class="pill" onclick="setIdeaCat('AI Services',this)">🤖 AI Services</button>
+          <button class="pill" onclick="setIdeaCat('Digital Products',this)">📦 Digital Products</button>
+          <button class="pill" onclick="setIdeaCat('Automation',this)">⚡ Automation</button>
+          <button class="pill" onclick="setIdeaCat('Content',this)">✍️ Content</button>
+        </div>
+        <div id="idea-grid" class="idea-grid"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+// ════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ════════════════════════════════════════════════════════════
+let API_URL     = '';
+let MODE        = 'demo';   // 'demo' | 'live'
+let CURRENT_USER= 'u001';
+let TASK_DATE   = isoToday();
+let PROMPT_CAT  = 'all';
+let IDEA_CAT    = 'all';
+let CHARTS      = {};
+
+// ── Chart.js defaults ──
+Chart.defaults.font.family = "'Plus Jakarta Sans',sans-serif";
+Chart.defaults.color       = '#7a9a7a';
+
+// ════════════════════════════════════════════════════════════
+// DATE HELPERS
+// ════════════════════════════════════════════════════════════
+function isoToday() { return new Date().toISOString().slice(0,10); }
+function isoOffset(base, n) {
+  const d = new Date(base + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(iso) {
+  return new Date(iso+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+function fmt$(n) { return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0}); }
+function pct(a,b) { return b===0?0:Math.round(((a-b)/b)*100); }
+
+// ════════════════════════════════════════════════════════════
+// LOCAL STORE (demo + offline cache)
+// ════════════════════════════════════════════════════════════
+const LS_KEY = 'money_dash_v2';
+function loadStore() { try { return JSON.parse(localStorage.getItem(LS_KEY))||{}; } catch { return {}; } }
+function saveStore(s) { localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+function lsGetEarning(d) { return (loadStore().earnings||{})[d]||0; }
+function lsSetEarning(d, a) {
+  const s = loadStore(); s.earnings = s.earnings||{}; s.earnings[d] = (s.earnings[d]||0)+a; saveStore(s);
+}
+function lsGetTasks(d) { return (loadStore().tasks||{})[d]||[]; }
+function lsSetTasks(d, arr) {
+  const s = loadStore(); s.tasks = s.tasks||{}; s.tasks[d] = arr; saveStore(s);
+}
+
+function seedDemoData() {
+  const s = loadStore();
+  const t = isoToday();
+  // Seed earnings for 14 days
+  s.earnings = s.earnings || {};
+  for (let i=13; i>=0; i--) {
+    const d = isoOffset(t, -i);
+    if (!s.earnings[d]) {
+      const dow = new Date(d+'T00:00:00').getDay();
+      const base = (dow===0||dow===6) ? 120 : 310;
+      s.earnings[d] = Math.max(40, Math.round(base + (Math.random()-.3)*180 + (13-i)*5));
+    }
+  }
+  // Seed tasks
+  s.tasks = s.tasks || {};
+  if (!s.tasks[t] || !s.tasks[t].length) {
+    s.tasks[t] = [
+      {id:'s1',text:'Review morning metrics & set priorities',type:'1h',done:true},
+      {id:'s2',text:'Reply to client emails and Slack',type:'1h',done:false},
+      {id:'s3',text:'Fix auth bug in onboarding flow',type:'3h',done:false},
+      {id:'s4',text:'Write Q2 growth strategy document',type:'3h',done:false},
+      {id:'s5',text:'Ship new billing dashboard feature',type:'fd',done:false},
+    ];
+  }
+  const y = isoOffset(t,-1);
+  if (!s.tasks[y] || !s.tasks[y].length) {
+    s.tasks[y] = [
+      {id:'y1',text:'Team standup & planning',type:'1h',done:true},
+      {id:'y2',text:'Customer support queue',type:'1h',done:true},
+      {id:'y3',text:'API performance sprint',type:'3h',done:true},
+      {id:'y4',text:'Investor deck prep',type:'3h',done:false},
+      {id:'y5',text:'Redesign user onboarding',type:'fd',done:false},
+    ];
+  }
+  saveStore(s);
+}
+
+// ════════════════════════════════════════════════════════════
+// API LAYER
+// ════════════════════════════════════════════════════════════
+async function apiFetch(params) {
+  const url = API_URL + '?' + new URLSearchParams(params);
+  const r   = await fetch(url);
+  const j   = await r.json();
+  if (j.status !== 'ok') throw new Error(j.message || 'API error');
+  return j.data;
+}
+async function apiPost(action, body) {
+  const r = await fetch(API_URL + '?action=' + action, {
+    method:'POST', body: JSON.stringify(body)
+  });
+  const j = await r.json();
+  if (j.status !== 'ok') throw new Error(j.message || 'API error');
+  return j.data;
+}
+
+// Unified data accessors
+async function fetchSummary(uid) {
+  if (MODE === 'live') {
+    return await apiFetch({ action:'getEarningsSummary', user_id:uid });
+  }
+  // Build from local store
+  const t=isoToday(), y=isoOffset(t,-1);
+  const now = new Date(t+'T00:00:00Z'), dow = now.getUTCDay();
+  const mon = isoOffset(t, -(dow===0?6:dow-1));
+  const lmon = isoOffset(mon,-7), lsun = isoOffset(mon,-1);
+  let todayA=0,yestA=0,thisW=0,lastW=0,total=0;
+  const s = loadStore().earnings || {};
+  Object.entries(s).forEach(([d,a]) => {
+    total += a;
+    if (d===t)                   todayA+=a;
+    if (d===y)                   yestA+=a;
+    if (d>=mon  && d<=t)         thisW+=a;
+    if (d>=lmon && d<=lsun)      lastW+=a;
+  });
+  return {
+    today:todayA, yesterday:yestA, this_week:thisW, last_week:lastW, total,
+    pct_day:  pct(todayA,yestA),
+    pct_week: pct(thisW,lastW),
+    target:5000, target_pct: Math.min(100,Math.round((thisW/5000)*100))
+  };
+}
+
+async function fetchEarnings14(uid) {
+  const t=isoToday();
+  if (MODE==='live') {
+    return await apiFetch({ action:'getEarnings', user_id:uid, from:isoOffset(t,-13), to:t });
+  }
+  return Array.from({length:14},(_,i)=>{
+    const d=isoOffset(t,-13+i);
+    return {date:d, amount:lsGetEarning(d)};
+  });
+}
+
+async function fetchTasks(uid, date) {
+  if (MODE==='live') {
+    const r = await apiFetch({ action:'getTasks', user_id:uid, date });
+    return r.map(t => ({...t, done: t.status==='done'}));
+  }
+  return lsGetTasks(date);
+}
+
+async function postAddEarning(uid, date, amount) {
+  if (MODE==='live') return await apiPost('addEarning', {user_id:uid,date,amount});
+  lsSetEarning(date, amount);
+}
+async function postAddTask(uid, date, task, type) {
+  const item = {id:'t'+Date.now(), text:task, type, done:false};
+  if (MODE==='live') {
+    const r = await apiPost('addTask', {user_id:uid,date,task,type,status:'pending'});
+    return {...r, _row:r._row, done:false};
+  }
+  const arr = lsGetTasks(date); arr.push(item); lsSetTasks(date,arr);
+  return item;
+}
+async function postUpdateTask(uid, taskOrRow, done) {
+  const status = done ? 'done' : 'pending';
+  if (MODE==='live') return await apiPost('updateTask', {user_id:uid, _row:taskOrRow._row||taskOrRow.id, status});
+  // local
+  const arr = lsGetTasks(TASK_DATE);
+  const t = arr.find(x=>x.id===taskOrRow.id);
+  if (t) t.done = done;
+  lsSetTasks(TASK_DATE, arr);
+}
+
+// ════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════
+const PAGE_TITLES = {
+  dashboard:'Dashboard', analytics:'Analytics',
+  tasks:'Tasks', prompts:'Prompt Vault', ideas:'Idea Vault'
+};
+
+function navTo(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('page-title').textContent = PAGE_TITLES[id]||id;
+  document.querySelector('.content').scrollTop = 0;
+  if (id==='dashboard') renderDashboard();
+  if (id==='analytics')  renderAnalytics();
+  if (id==='tasks')      renderTasks();
+  if (id==='prompts')    renderPrompts();
+  if (id==='ideas')      renderIdeas();
+}
+
+// ════════════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════════════
+async function renderDashboard() {
+  setLoading(true);
+  try {
+    const sum   = await fetchSummary(CURRENT_USER);
+    const earn14 = await fetchEarnings14(CURRENT_USER);
+    const tasks  = await fetchTasks(CURRENT_USER, isoToday());
+
+    renderKPIs(sum);
+    buildTrendChart(earn14);
+    buildCompareChart(sum);
+    buildWeeklyChart(earn14);
+    buildTasksDashChart(tasks);
+    renderDashTaskBuckets(tasks);
+
+    document.getElementById('earn-date').value = isoToday();
+  } catch(e) { toast('⚠ '+e.message); }
+  setLoading(false);
+}
+
+function renderKPIs(s) {
+  const kpis = [
+    { label:'Total Earnings', value: fmt$(s.total), delta:null, cls:'hero', icon:'💎', ic:'rgba(255,255,255,.15)', kc:'' },
+    { label:'Today',          value: fmt$(s.today), delta:s.pct_day, cls:'', icon:'☀️', ic:'var(--g100)', kc:'var(--g500)' },
+    { label:'Yesterday',      value: fmt$(s.yesterday), delta:null, cls:'', icon:'📅', ic:'var(--bg2)', kc:'var(--tx4)' },
+    { label:'This Week',      value: fmt$(s.this_week), delta:s.pct_week, cls:'yellow', icon:'📈', ic:'var(--y100)', kc:'var(--y500)' },
+    { label:'Last Week',      value: fmt$(s.last_week), delta:null, cls:'', icon:'🗓', ic:'var(--bg2)', kc:'var(--tx4)' },
+    { label:'Target Progress', value: s.target_pct+'%', special:'target', target_pct:s.target_pct, this_week:s.this_week, cls:'', kc:'var(--y400)' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => {
+    if (k.special==='target') return `
+      <div class="kpi target-card" style="--kc:${k.kc}">
+        <div class="kpi-icon" style="background:var(--y100);font-size:14px">🎯</div>
+        <div class="kpi-label">Weekly Target</div>
+        <div class="kpi-value">${k.value} of $5K</div>
+        <div class="prog-track" style="margin-top:8px">
+          <div class="prog-fill" style="width:${k.target_pct}%;background:linear-gradient(90deg,var(--g500),var(--y400))"></div>
+        </div>
+        <div class="target-labels"><span>${fmt$(k.this_week)}</span><span>$5,000</span></div>
+      </div>`;
+    const dCls = k.delta>0?'pos':k.delta<0?'neg':'neu';
+    const dArrow = k.delta>0?'↑ +':k.delta<0?'↓ ':null;
+    return `
+      <div class="kpi ${k.cls}" style="--kc:${k.kc||''}">
+        <div class="kpi-icon" style="background:${k.ic}">${k.icon}</div>
+        <div class="kpi-label">${k.label}</div>
+        <div class="kpi-value">${k.value}</div>
+        ${k.delta!==null && k.delta!==undefined ? `<div class="delta ${dCls}">${dArrow}${Math.abs(k.delta)}% vs prior</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderDashTaskBuckets(tasks) {
+  const BUCKETS = {
+    '1h':{label:'1-Hour',color:'#ef4444',h:1},
+    '3h':{label:'3-Hour',color:'#3b82f6',h:3},
+    'fd':{label:'Full Day',color:'#22c55e',h:8},
+  };
+  document.getElementById('dash-task-buckets').innerHTML = Object.entries(BUCKETS).map(([k,b]) => {
+    const sub = tasks.filter(t=>t.type===k);
+    const done = sub.filter(t=>t.done).length;
+    const w = sub.length===0?0:Math.round((done/sub.length)*100);
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:6px;height:6px;border-radius:50%;background:${b.color};flex-shrink:0"></div>
+      <div style="font-size:11px;flex:1;color:var(--tx2)">${b.label} Tasks</div>
+      <div style="font-size:10px;color:var(--tx3)">${done}/${sub.length}</div>
+      <div style="width:55px;height:3px;background:var(--bg2);border-radius:99px;overflow:hidden">
+        <div style="width:${w}%;height:100%;background:${b.color};border-radius:99px;transition:width .6s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+// ANALYTICS
+// ════════════════════════════════════════════════════════════
+async function renderAnalytics() {
+  setLoading(true);
+  try {
+    const sum    = await fetchSummary(CURRENT_USER);
+    const earn14 = await fetchEarnings14(CURRENT_USER);
+    const t      = isoToday();
+
+    // Compare strip
+    document.getElementById('an-today').textContent = fmt$(sum.today);
+    document.getElementById('an-yest').textContent  = fmt$(sum.yesterday);
+    const dp = sum.pct_day, sign = dp>0?'↑ +':dp<0?'↓ ':' ';
+    document.getElementById('an-today-sub').innerHTML = `<span style="color:${dp>=0?'var(--g700)':'var(--red)'}">${sign}${Math.abs(dp)}%</span> vs yesterday`;
+    document.getElementById('an-yest-sub').textContent = 'Prior day baseline';
+
+    // Mini bars
+    const last7  = earn14.slice(-7).map(e=>e.amount);
+    const first7 = earn14.slice(0,7).map(e=>e.amount);
+    buildMiniBars('mb-today', last7,  ['var(--g200)','var(--g200)','var(--g200)','var(--g200)','var(--g200)','var(--g400)','var(--g700)']);
+    buildMiniBars('mb-yest',  first7, Array(7).fill('var(--bg2)'));
+
+    // Charts
+    buildWWChart(earn14);
+    build14dChart(earn14);
+    buildTCChart(t);
+    buildHourlyChart(sum.today);
+
+    // Insights
+    const tasks = await fetchTasks(CURRENT_USER, t);
+    const total = tasks.length, done = tasks.filter(x=>x.done).length;
+    const tPct  = total===0?0:Math.round((done/total)*100);
+    buildInsights(sum, earn14, tPct, done, total);
+
+  } catch(e) { toast('⚠ '+e.message); }
+  setLoading(false);
+}
+
+function buildMiniBars(id, vals, colors) {
+  const max = Math.max(...vals, 1);
+  document.getElementById(id).innerHTML = vals.map((v,i) =>
+    `<div class="mini-bar" style="height:${Math.max(Math.round((v/max)*100),v>0?5:2)}%;background:${colors[i]||'var(--bg2)'}"></div>`
+  ).join('');
+}
+
+function buildInsights(sum, earn14, tPct, done, total) {
+  const dp = sum.pct_day, wp = sum.pct_week;
+  const avg = Math.round(earn14.reduce((a,e)=>a+e.amount,0)/14);
+  const rows = [
+    { c: dp>=0?'var(--g700)':'var(--red)',
+      t: dp>=0 ? `Today is <strong>+${Math.abs(dp)}%</strong> ahead of yesterday. Strong momentum.`
+               : `Today is <strong>${Math.abs(dp)}%</strong> below yesterday. Push harder this afternoon.` },
+    { c: wp>=0?'var(--g700)':'#92400e',
+      t: wp>=0 ? `This week tracking <strong>+${wp}%</strong> above last week. On target.`
+               : `Week tracking <strong>${Math.abs(wp)}%</strong> behind last week.` },
+    { c:'#3b82f6',  t:`Task completion today: <strong>${tPct}%</strong> (${done}/${total} tasks completed).` },
+    { c:'var(--y500)', t:`14-day avg daily revenue: <strong>${fmt$(avg)}</strong>. Target: <strong>$5,000/week</strong>.` },
+  ];
+  document.getElementById('insight-list').innerHTML = rows.map(r =>
+    `<div style="display:flex;gap:10px;align-items:flex-start">
+       <div style="width:7px;height:7px;border-radius:50%;background:${r.c};flex-shrink:0;margin-top:4px"></div>
+       <div style="font-size:12px;line-height:1.6;color:var(--tx2)">${r.t}</div>
+     </div>`
+  ).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+// TASKS
+// ════════════════════════════════════════════════════════════
+const BUCKETS = {
+  '1h':{ label:'1-Hour Tasks',   color:'#ef4444', bg:'#fef2f2', h:1 },
+  '3h':{ label:'3-Hour Tasks',   color:'#3b82f6', bg:'#eff6ff', h:3 },
+  'fd':{ label:'Full Day Tasks', color:'#22c55e', bg:'#f0fdf4', h:8 },
+};
+
+function taskNav(n) {
+  if (n>0 && TASK_DATE>=isoToday()) return;
+  TASK_DATE = isoOffset(TASK_DATE, n);
+  renderTasks();
+}
+
+async function renderTasks() {
+  const isToday = TASK_DATE === isoToday();
+  document.getElementById('task-date-chip').textContent = isToday ? 'Today — '+fmtDate(TASK_DATE) : fmtDate(TASK_DATE);
+  document.getElementById('task-next-btn').style.opacity = isToday?'0.3':'1';
+  setLoading(true);
+  try {
+    const tasks = await fetchTasks(CURRENT_USER, TASK_DATE);
+    renderTaskStats(tasks);
+    renderTaskBuckets(tasks);
+    renderTaskCompare(tasks);
+    updateTaskBadge(tasks);
+  } catch(e) { toast('⚠ '+e.message); }
+  setLoading(false);
+}
+
+function renderTaskStats(tasks) {
+  const total = tasks.length, done = tasks.filter(t=>t.done).length;
+  const tPct  = total===0?0:Math.round((done/total)*100);
+  const hours = tasks.reduce((s,t)=>s+BUCKETS[t.type]?.h||0,0);
+  const clr   = tasks.filter(t=>t.done).reduce((s,t)=>s+BUCKETS[t.type]?.h||0,0);
+
+  document.getElementById('task-master-fill').style.width = tPct+'%';
+  document.getElementById('task-pct-label').textContent = tPct+'%';
+  document.getElementById('ts-done').textContent    = `${done}/${total}`;
+  document.getElementById('ts-pct').textContent     = `${tPct}%`;
+  document.getElementById('ts-hours').textContent   = `${hours}h`;
+  document.getElementById('ts-cleared').textContent = `${clr}h`;
+
+  // Segment bars
+  document.getElementById('task-seg-bars').innerHTML = Object.entries(BUCKETS).map(([k,b]) => {
+    const sub = tasks.filter(t=>t.type===k);
+    const w = sub.length===0?0:Math.round((sub.filter(t=>t.done).length/sub.length)*100);
+    return `<div style="flex:1">
+      <div style="font-size:9px;color:var(--tx3);display:flex;justify-content:space-between;margin-bottom:3px">
+        <span>${k==='fd'?'FD':k}</span><span>${sub.filter(t=>t.done).length}/${sub.length}</span>
+      </div>
+      <div style="height:3px;background:var(--bg2);border-radius:99px;overflow:hidden">
+        <div style="width:${w}%;height:100%;background:${b.color};border-radius:99px;transition:width .6s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTaskBuckets(tasks) {
+  document.getElementById('task-buckets').innerHTML = Object.entries(BUCKETS).map(([k,b]) => {
+    const sub = tasks.filter(t=>t.type===k);
+    const done= sub.filter(t=>t.done).length;
+    const w   = sub.length===0?0:Math.round((done/sub.length)*100);
+    return `<div class="bucket">
+      <div class="bucket-head" style="background:${b.bg}">
+        <div class="bucket-dot" style="background:${b.color}"></div>
+        <div class="bucket-name" style="color:${b.color}">${b.label}</div>
+        <div class="bucket-prog">
+          <div class="bucket-prog-track">
+            <div class="bucket-prog-fill" style="width:${w}%;background:${b.color}"></div>
+          </div>
+          <div class="bucket-count">${done}/${sub.length}</div>
+        </div>
+      </div>
+      ${sub.length===0
+        ? `<div class="task-empty">No ${b.label.toLowerCase()} scheduled</div>`
+        : sub.map(t => taskHTML(t, b.color)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function taskHTML(t, color) {
+  return `<div class="task-item ${t.done?'done':''}" id="ti-${t.id||t._row}">
+    <div class="task-check ${t.done?'done':''}" onclick="toggleTask('${t.id||t._row}',${!!t.done})"
+      style="${!t.done?'border-color:'+color+'55':''};"></div>
+    <div class="task-text">${esc(t.task||t.text||'')}</div>
+    <div class="task-type-badge" style="background:${color}18;color:${color}">
+      ${t.type==='fd'?'8h':t.type==='3h'?'3h':'1h'}
+    </div>
+    <button class="task-del" onclick="delTask('${t.id||t._row}')">✕</button>
+  </div>`;
+}
+
+async function toggleTask(idOrRow, wasDone) {
+  const tasks = await fetchTasks(CURRENT_USER, TASK_DATE);
+  const t = tasks.find(x=>(x.id||x._row)==idOrRow);
+  if (!t) return;
+  await postUpdateTask(CURRENT_USER, t, !wasDone);
+  renderTasks();
+}
+
+async function delTask(idOrRow) {
+  if (MODE==='live') { toast('Delete not supported in live mode via this UI'); return; }
+  const arr = lsGetTasks(TASK_DATE).filter(x=>x.id!==idOrRow);
+  lsSetTasks(TASK_DATE, arr);
+  renderTasks();
+}
+
+async function addTask() {
+  const text = document.getElementById('new-task-text').value.trim();
+  const type = document.getElementById('new-task-type').value;
+  if (!text) return;
+  document.getElementById('new-task-text').value = '';
+  await postAddTask(CURRENT_USER, TASK_DATE, text, type);
+  renderTasks();
+  toast('✓ Task added');
+}
+
+async function renderTaskCompare(todayTasks) {
+  const yDate  = isoOffset(TASK_DATE,-1);
+  const yTasks = await fetchTasks(CURRENT_USER, yDate).catch(()=>[]);
+  const tDone  = todayTasks.filter(x=>x.done).length, tTotal = todayTasks.length;
+  const yDone  = yTasks.filter(x=>x.done).length,     yTotal = yTasks.length;
+  const tP = tTotal===0?0:Math.round((tDone/tTotal)*100);
+  const yP = yTotal===0?0:Math.round((yDone/yTotal)*100);
+  const diff = tP - yP;
+  document.getElementById('task-compare-panel').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+      <div>
+        <div style="font-family:var(--fh);font-size:26px;font-weight:700">${tP}%</div>
+        <div style="font-size:10px;color:var(--tx3)">Today (${tDone}/${tTotal})</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:13px;font-weight:600;color:${diff>=0?'var(--g700)':'var(--red)'}">${diff>=0?'↑ +':'↓ '}${Math.abs(diff)}pts</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--fh);font-size:26px;font-weight:700;color:var(--tx3)">${yP}%</div>
+        <div style="font-size:10px;color:var(--tx3)">Yesterday (${yDone}/${yTotal})</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <div style="flex:1;height:4px;border-radius:99px;background:${tP>0?'var(--g500)':'var(--bg2)'};opacity:${Math.max(tP/100,.1)}"></div>
+      <div style="flex:1;height:4px;border-radius:99px;background:${yP>0?'var(--g200)':'var(--bg2)'};opacity:${Math.max(yP/100,.1)}"></div>
+    </div>`;
+}
+
+function updateTaskBadge(tasks) {
+  const pending = tasks.filter(t=>!t.done).length;
+  document.getElementById('nav-tasks-badge').textContent = pending||'';
+}
+
+// ════════════════════════════════════════════════════════════
+// ADD EARNING
+// ════════════════════════════════════════════════════════════
+async function addEarning() {
+  const amt  = parseFloat(document.getElementById('earn-amount').value);
+  const date = document.getElementById('earn-date').value || isoToday();
+  if (!amt || amt<=0) { toast('Enter a valid amount'); return; }
+  try {
+    await postAddEarning(CURRENT_USER, date, amt);
+    document.getElementById('earn-amount').value = '';
+    toast('✓ Earning added: ' + fmt$(amt));
+    renderDashboard();
+  } catch(e) { toast('⚠ '+e.message); }
+}
+
+// ════════════════════════════════════════════════════════════
+// CHART BUILDERS
+// ════════════════════════════════════════════════════════════
+function mkChart(id, cfg) {
+  if (CHARTS[id]) CHARTS[id].destroy();
+  const ctx = document.getElementById(id)?.getContext('2d');
+  if (!ctx) return;
+  CHARTS[id] = new Chart(ctx, cfg);
+}
+function grd(ctx, c1, c2, h=200) {
+  const g = ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,c1); g.addColorStop(1,c2); return g;
+}
+function baseOpts(yFmt) {
+  return {
+    responsive:true, animation:{duration:600},
+    plugins:{legend:{display:false},tooltip:{
+      backgroundColor:'#fff',titleColor:'#14532d',bodyColor:'#3d5c3d',
+      borderColor:'#dde8d5',borderWidth:1,padding:10,
+      callbacks:{ label: ctx => ' '+fmt$(ctx.parsed.y) }
+    }},
+    scales:{
+      x:{grid:{display:false}, ticks:{font:{size:9},maxTicksLimit:8}},
+      y:{grid:{color:'#eef2ea'}, ticks:{font:{size:9},callback:v=>yFmt?yFmt(v):'$'+v}}
+    }
+  };
+}
+
+function buildTrendChart(earn14) {
+  mkChart('ch-trend', {
+    type:'line',
+    data:{
+      labels: earn14.map(e=>new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})),
+      datasets:[{
+        data: earn14.map(e=>e.amount),
+        borderColor:'#22c55e', borderWidth:2.5,
+        pointBackgroundColor:'#15803d', pointRadius:3,
+        fill:true,
+        backgroundColor: ctx => grd(ctx.chart.ctx,'rgba(34,197,94,.18)','rgba(34,197,94,0)'),
+        tension:.45
+      }]
+    },
+    options: baseOpts()
+  });
+}
+
+function buildCompareChart(sum) {
+  mkChart('ch-compare', {
+    type:'bar',
+    data:{
+      labels:['Yesterday','Today'],
+      datasets:[{
+        data:[sum.yesterday, sum.today],
+        backgroundColor:['rgba(34,197,94,.2)','#22c55e'],
+        borderRadius:8, barPercentage:.5
+      }]
+    },
+    options: baseOpts()
+  });
+}
+
+function buildWeeklyChart(earn14) {
+  const week = earn14.slice(-7);
+  const avg  = Math.round(week.reduce((s,e)=>s+e.amount,0)/7);
+  document.getElementById('week-badge').textContent = 'avg '+fmt$(avg)+'/day';
+  mkChart('ch-weekly', {
+    type:'bar',
+    data:{
+      labels: week.map(e=>new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'})),
+      datasets:[{
+        data: week.map(e=>e.amount),
+        backgroundColor: week.map((_,i)=>i===week.length-1?'#eab308':'rgba(234,179,8,.4)'),
+        borderRadius:6, barPercentage:.6
+      }]
+    },
+    options: baseOpts()
+  });
+}
+
+function buildTasksDashChart(tasks) {
+  const t = isoToday();
+  const labels=[], vals=[];
+  for(let i=6;i>=0;i--) {
+    const d  = isoOffset(t,-i);
+    const ts = lsGetTasks(d);
+    labels.push(new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'}));
+    vals.push(ts.length===0?null:Math.round((ts.filter(x=>x.done).length/ts.length)*100));
+  }
+  mkChart('ch-tasks-dash', {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        data:vals,
+        borderColor:'#eab308', borderWidth:2,
+        pointBackgroundColor:'#eab308', pointRadius:3,
+        fill:true,
+        backgroundColor: ctx => grd(ctx.chart.ctx,'rgba(234,179,8,.2)','rgba(234,179,8,0)'),
+        tension:.4, spanGaps:true
+      }]
+    },
+    options: {
+      ...baseOpts(v=>v+'%'),
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:9}}},
+        y:{grid:{color:'#eef2ea'},max:100,ticks:{font:{size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+function buildWWChart(earn14) {
+  const tw = earn14.slice(-7), lw = earn14.slice(0,7);
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  mkChart('ch-ww', {
+    type:'bar',
+    data:{
+      labels:days,
+      datasets:[
+        {label:'Last Week', data:lw.map(e=>e.amount), backgroundColor:'rgba(34,197,94,.2)', borderRadius:4, barPercentage:.4},
+        {label:'This Week', data:tw.map(e=>e.amount), backgroundColor:'rgba(234,179,8,.8)',  borderRadius:4, barPercentage:.4},
+      ]
+    },
+    options:{
+      ...baseOpts(),
+      plugins:{...baseOpts().plugins, legend:{display:true,labels:{color:'#7a9a7a',font:{size:9},boxWidth:8,padding:10}}}
+    }
+  });
+}
+
+function build14dChart(earn14) {
+  mkChart('ch-14d', {
+    type:'line',
+    data:{
+      labels: earn14.map(e=>new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})),
+      datasets:[{
+        data:earn14.map(e=>e.amount),
+        borderColor:'#22c55e', borderWidth:2,
+        pointRadius:2, pointBackgroundColor:'#15803d',
+        fill:true,
+        backgroundColor: ctx => grd(ctx.chart.ctx,'rgba(34,197,94,.2)','rgba(34,197,94,0)'),
+        tension:.45
+      }]
+    },
+    options: baseOpts()
+  });
+}
+
+function buildTCChart(t) {
+  const labels=[], vals=[];
+  for(let i=6;i>=0;i--) {
+    const d  = isoOffset(t,-i);
+    const ts = lsGetTasks(d);
+    labels.push(new Date(d+'T00:00:00').toLocaleDateString('en-US',{weekday:'short'}));
+    vals.push(ts.length===0?null:Math.round((ts.filter(x=>x.done).length/ts.length)*100));
+  }
+  mkChart('ch-tc', {
+    type:'line',
+    data:{ labels, datasets:[{
+      data:vals,
+      borderColor:'#eab308', borderWidth:2,
+      pointRadius:3, pointBackgroundColor:'#eab308',
+      fill:true,
+      backgroundColor: ctx => grd(ctx.chart.ctx,'rgba(234,179,8,.2)','rgba(234,179,8,0)'),
+      tension:.4, spanGaps:true
+    }]},
+    options:{
+      ...baseOpts(v=>v+'%'),
+      scales:{x:{grid:{display:false},ticks:{font:{size:9}}},
+              y:{grid:{color:'#eef2ea'},max:100,ticks:{font:{size:9},callback:v=>v+'%'}}}
+    }
+  });
+}
+
+function buildHourlyChart(todayAmt) {
+  const hr = new Date().getHours();
+  const w  = [0,0,0,0,0,.5,1,2,3,3,4,4,5,4,4,3,3,2,2,1.5,1,.5,.3,.2];
+  const wt = w.reduce((a,b)=>a+b,0);
+  const data= w.map((v,i)=>i<=hr?Math.round((v/wt)*todayAmt):null);
+  mkChart('ch-hourly', {
+    type:'line',
+    data:{
+      labels: Array.from({length:24},(_,i)=>`${i%12||12}${i<12?'a':'p'}`),
+      datasets:[{
+        data, borderColor:'#22c55e', borderWidth:2, pointRadius:0,
+        fill:true,
+        backgroundColor: ctx => grd(ctx.chart.ctx,'rgba(34,197,94,.25)','rgba(34,197,94,0)'),
+        tension:.5, spanGaps:false
+      }]
+    },
+    options:{
+      ...baseOpts(),
+      scales:{x:{grid:{display:false},ticks:{font:{size:9},maxTicksLimit:8}},
+              y:{grid:{color:'#eef2ea'},ticks:{font:{size:9},callback:v=>'$'+v}}}
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// PROMPTS
+// ════════════════════════════════════════════════════════════
+const CAT_STYLE = {
+  Money:      {fg:'#92400e', bg:'#fef9c3', border:'#fde68a'},
+  Sales:      {fg:'#991b1b', bg:'#fee2e2', border:'#fca5a5'},
+  Content:    {fg:'#14532d', bg:'#dcfce7', border:'#86efac'},
+  Automation: {fg:'#1e3a8a', bg:'#dbeafe', border:'#93c5fd'},
+};
+
+function setPromptCat(c, el) {
+  PROMPT_CAT = c;
+  document.querySelectorAll('#p-cat-pills .pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderPrompts();
+}
+
+function renderPrompts() {
+  const q = (document.getElementById('p-search')?.value||'').toLowerCase();
+  let arr = PROMPTS;
+  if (PROMPT_CAT!=='all') arr = arr.filter(p=>p.cat===PROMPT_CAT);
+  if (q) arr = arr.filter(p=>p.text.toLowerCase().includes(q)||p.cat.toLowerCase().includes(q));
+
+  const cats = PROMPT_CAT==='all'?['Money','Sales','Content','Automation']:[PROMPT_CAT];
+  let html = '';
+  cats.forEach(c => {
+    const g = arr.filter(p=>p.cat===c); if(!g.length) return;
+    const cs = CAT_STYLE[c]||{fg:'#555',bg:'#eee',border:'#ccc'};
+    html += `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${cs.fg};margin:20px 0 10px;font-weight:600">${c} — ${g.length} prompts</div>
+    <div class="prompt-grid">${g.map((p,i)=>`
+      <div class="prompt-card" style="animation-delay:${Math.min(i*.025,.5)}s">
+        <div class="prompt-card-top">
+          <div class="p-cat-badge" style="background:${cs.bg};color:${cs.fg};border:1px solid ${cs.border}">${p.cat}</div>
+          <div class="p-num" style="margin-left:auto">#${String(i+1).padStart(3,'0')}</div>
+        </div>
+        <div class="p-text">${p.text.replace(/\n/g,'<br>')}</div>
+        <button class="copy-btn" onclick="doCopy(this,'${encodeURIComponent(p.text)}')">
+          ⎘ Copy
+        </button>
+      </div>`).join('')}</div>`;
+  });
+  document.getElementById('prompt-grid').innerHTML = html || '<div style="color:var(--tx4);padding:40px 0;text-align:center">No prompts found.</div>';
+}
+
+// ════════════════════════════════════════════════════════════
+// IDEAS
+// ════════════════════════════════════════════════════════════
+const IDEA_CAT_STYLE = {
+  'AI Services':     {fg:'#0369a1',bg:'#e0f2fe',border:'#7dd3fc'},
+  'Digital Products':{fg:'#92400e',bg:'#fef3c7',border:'#fcd34d'},
+  'Automation':      {fg:'#1e3a8a',bg:'#dbeafe',border:'#93c5fd'},
+  'Content':         {fg:'#14532d',bg:'#dcfce7',border:'#86efac'},
+};
+
+function setIdeaCat(c, el) {
+  IDEA_CAT = c;
+  document.querySelectorAll('.pill').forEach(b=>{
+    if (b.closest('#idea-grid')===null) return;
+  });
+  // find the pill bar
+  el.closest('.pill-row')?.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderIdeas();
+}
+
+function renderIdeas() {
+  const q = (document.getElementById('i-search')?.value||'').toLowerCase();
+  let arr = IDEAS;
+  if (IDEA_CAT!=='all') arr = arr.filter(i=>i.cat===IDEA_CAT);
+  if (q) arr = arr.filter(i=>i.name.toLowerCase().includes(q)||i.cat.toLowerCase().includes(q));
+
+  const cats = IDEA_CAT==='all'?['AI Services','Digital Products','Automation','Content']:[IDEA_CAT];
+  let html = '';
+  cats.forEach(c => {
+    const g = arr.filter(i=>i.cat===c); if(!g.length) return;
+    const cs = IDEA_CAT_STYLE[c]||{fg:'#555',bg:'#eee',border:'#ccc'};
+    html += `<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:${cs.fg};margin:20px 0 10px;font-weight:600">${c} — ${g.length}</div>
+    <div class="idea-grid">${g.map((idea,i)=>{
+      const dc = {Easy:'diff-easy',Medium:'diff-medium',Hard:'diff-hard'}[idea.difficulty]||'';
+      const pc = {Low:'profit-low',Medium:'profit-med',High:'profit-high','Very High':'profit-vhigh'}[idea.profit]||'';
+      const stars = {Low:1,Medium:2,High:3,'Very High':4}[idea.profit]||1;
+      const ss = Array.from({length:4},(_,j)=>`<span class="star" style="color:${j<stars?cs.fg:'var(--tx4)'}">★</span>`).join('');
+      return `<div class="idea-card" style="animation-delay:${Math.min(i*.03,.6)}s">
+        <div class="idea-cat" style="background:${cs.bg};color:${cs.fg};border:1px solid ${cs.border}">${idea.cat}</div>
+        <div class="idea-name">${idea.name}</div>
+        <div class="idea-meta">
+          <div class="idea-diff ${dc}">${idea.difficulty}</div>
+          <div class="idea-profit ${pc}">${idea.profit}</div>
+          <div class="idea-stars">${ss}</div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  });
+  document.getElementById('idea-grid').innerHTML = html || '<div style="color:var(--tx4);padding:40px 0;text-align:center">No ideas found.</div>';
+}
+
+// ════════════════════════════════════════════════════════════
+// COPY HELPER
+// ════════════════════════════════════════════════════════════
+function doCopy(btn, enc) {
+  const text = decodeURIComponent(enc);
+  navigator.clipboard.writeText(text).then(()=>{
+    const o=btn.innerHTML; btn.innerHTML='✓ Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.innerHTML=o; btn.classList.remove('copied'); }, 1800);
+  }).catch(()=>{
+    const ta=document.createElement('textarea'); ta.value=text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    const o=btn.innerHTML; btn.innerHTML='✓ Copied!'; btn.classList.add('copied');
+    setTimeout(()=>{ btn.innerHTML=o; btn.classList.remove('copied'); }, 1800);
+  });
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ════════════════════════════════════════════════════════════
+// TOAST / LOADING
+// ════════════════════════════════════════════════════════════
+let toastT;
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.classList.remove('show'),2800);
+}
+function setLoading(on) {
+  const dot = document.getElementById('sync-dot');
+  dot.classList.toggle('loading', on);
+}
+
+// ════════════════════════════════════════════════════════════
+// CONFIG / MODE
+// ════════════════════════════════════════════════════════════
+let configMode = 'demo';
+function setMode(m) {
+  configMode = m;
+  document.getElementById('mode-demo').classList.toggle('active', m==='demo');
+  document.getElementById('mode-live').classList.toggle('active', m==='live');
+  document.getElementById('api-url-section').style.display = m==='live'?'block':'none';
+}
+async function testApi() {
+  const url = document.getElementById('api-url').value.trim();
+  if (!url) return;
+  const st = document.getElementById('api-status');
+  st.textContent = 'Testing…';
+  try {
+    const r = await fetch(url+'?action=ping');
+    const j = await r.json();
+    st.textContent = j.status==='ok' ? '✓ Connected!' : '⚠ Response error';
+    st.style.color = j.status==='ok'?'var(--g700)':'var(--red)';
+  } catch {
+    st.textContent = '✗ Could not connect. Check URL and deployment.';
+    st.style.color = 'var(--red)';
+  }
+}
+function startApp() {
+  MODE = configMode;
+  if (MODE==='live') {
+    const url = document.getElementById('api-url').value.trim();
+    if (!url) { toast('Paste your API URL first'); return; }
+    API_URL = url;
+    localStorage.setItem('money_dash_api', url);
+    document.getElementById('footer-mode').textContent = 'Live Mode';
+  } else {
+    document.getElementById('footer-mode').textContent = 'Demo Mode';
+  }
+  document.getElementById('cfg-overlay').remove();
+  document.getElementById('topbar-date').textContent =
+    new Date().toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'});
+  seedDemoData();
+  loadUsers();
+  renderDashboard();
+  renderPrompts();
+  renderIdeas();
+}
+
+async function loadUsers() {
+  if (MODE!=='live') return;
+  try {
+    const users = await apiFetch({action:'getUsers'});
+    const sel = document.getElementById('user-select');
+    sel.innerHTML = users.map(u=>`<option value="${u.user_id}">${u.email}</option>`).join('');
+    CURRENT_USER = users[0]?.user_id||'u001';
+    updateUserAvatar();
+  } catch {}
+}
+
+function switchUser() {
+  CURRENT_USER = document.getElementById('user-select').value;
+  updateUserAvatar();
+  navTo('dashboard', document.querySelector('.nav-item.active'));
+}
+function updateUserAvatar() {
+  const sel = document.getElementById('user-select');
+  document.getElementById('user-avatar').textContent = sel.options[sel.selectedIndex]?.text?.charAt(0)?.toUpperCase()||'U';
+}
+
+async function syncData() {
+  const active = document.querySelector('.page.active')?.id?.replace('page-','');
+  if (active==='dashboard') await renderDashboard();
+  else if (active==='analytics') await renderAnalytics();
+  else if (active==='tasks') await renderTasks();
+  toast('✓ Synced');
+}
+
+// ════════════════════════════════════════════════════════════
+// STATIC DATA — PROMPTS (80)
+// ════════════════════════════════════════════════════════════
+const PROMPTS = [
+// Money (20)
+{cat:'Money',text:`Act as a high-ticket pricing strategist for a B2B SaaS product.\nAnalyze the value ladder from $97/mo to $4,997/mo.\nIdentify the 3 psychological triggers that justify premium pricing.\nWrite positioning copy for each tier that makes the jump feel inevitable.\nInclude a risk-reversal guarantee that converts hesitant buyers.`},
+{cat:'Money',text:`You are a cash flow optimization expert for a 6-figure online business.\nAudit the typical revenue leaks in a subscription model.\nPropose 5 structural changes that improve net margin by 20%+ without cutting headcount.\nEach change must be implementable within 30 days.\nPrioritize by impact-to-effort ratio.`},
+{cat:'Money',text:`Design a productized service offering that generates $10K/month from a single skill.\nDefine the exact deliverable, timeline, and client profile.\nWrite the sales page headline, 3 bullet benefits, and a one-paragraph close.\nInclude pricing psychology and a comparison to the DIY alternative cost.\nMake it irresistible to a time-poor founder.`},
+{cat:'Money',text:`You are a revenue architect for a solopreneur crossing $500K/year.\nMap out a 4-stream income system: active, semi-passive, passive, leveraged.\nFor each stream, define the effort level, monthly cap, and startup cost.\nShow how they compound over 12 months.\nInclude the one constraint that breaks most people at this level.`},
+{cat:'Money',text:`Create a 90-day monetization sprint for a newsletter with 5,000 subscribers.\nInclude sponsor outreach templates, a rate card, and a $47 digital product launch.\nDefine week-by-week milestones and a realistic revenue projection.\nInclude the exact subject lines that drive affiliate clicks.\nAssume $0 ad spend.`},
+{cat:'Money',text:`Build a premium group coaching offer at $2,500–$5,000.\nDefine the transformation, container, and community structure.\nWrite the waitlist email sequence and enrollment call script outline.\nInclude the Zoom call format for maximizing perceived value.\nShow revenue at 10, 20, and 30 members.`},
+{cat:'Money',text:`Create a challenge launch funnel that generates $100K in 5 days.\nDefine the challenge topic, daily structure, and upgrade path to the core offer.\nWrite the registration page copy, daily email subjects, and live-call agenda.\nInclude the exact moment to make the offer and what objections to preemptively address.\nProject revenue at 500, 1,000, and 2,500 registrants.`},
+{cat:'Money',text:`Design a micro-SaaS product idea validation framework for a non-technical founder.\nInclude market signal research, competitor pricing analysis, and a landing page test strategy.\nWrite a 60-day validation roadmap with go/no-go criteria.\nInclude the tool stack for building an MVP without code.\nDefine the revenue threshold that justifies full development.`},
+{cat:'Money',text:`Build a paid newsletter business model generating $15K/month.\nDefine the niche, subscriber acquisition cost, and content cadence.\nWrite the landing page copy, onboarding email, and first paid issue format.\nInclude a churn-reduction strategy and a referral program.\nShow the subscriber numbers needed at $10, $20, and $30/month tiers.`},
+{cat:'Money',text:`Create a passive income blueprint using YouTube and digital products.\nDefine the channel niche, video structure, and product placement strategy.\nWrite the first 3 video titles, descriptions, and CTAs.\nInclude a monetization timeline from 0 to 10K subscribers.\nShow how $47 and $197 products perform at different traffic levels.`},
+{cat:'Money',text:`Design a done-for-you service offer that scales to $50K/month with a team of 3.\nDefine the service, client deliverables, and weekly workflow.\nInclude a hiring playbook for the first two roles.\nWrite the SOPs for the 3 most critical tasks.\nShow how to maintain 40% margins while growing.`},
+{cat:'Money',text:`Write a Black Friday campaign that generates $80K in 10 days.\nDesign a pre-sale, open, urgency, and close phase sequence.\nWrite the email subject lines, social proof hooks, and countdown timer strategy.\nDefine the deal structure: discount, bundle, or bonus stack.\nProject revenue at 1% and 3% list conversion rates.`},
+{cat:'Money',text:`Build a content-to-cash system for a LinkedIn creator with 10K followers.\nDefine the 4 content pillars, posting frequency, and DM conversion strategy.\nWrite 3 call-to-action formats that convert readers into leads.\nInclude a lead magnet strategy and a 5-day email nurture sequence.\nProject client revenue from 3 different offer price points.`},
+{cat:'Money',text:`Create a licensing deal framework for packaging your expertise into a B2B license.\nDefine what can be licensed: methodology, templates, training, or brand.\nWrite the pitch email to a company with 50–200 employees.\nInclude pricing models: per-seat, revenue share, and flat annual fee.\nShow how to close the first deal in 60 days.`},
+{cat:'Money',text:`Design an upsell and cross-sell sequence for a digital course at $297.\nInclude a post-purchase email series with order bumps.\nCalculate LTV impact at 5%, 10%, and 15% conversion rates.\nWrite the exact subject lines for each email.\nInclude a dormant buyer re-engagement campaign.`},
+{cat:'Money',text:`Build a $5K/month info-product business from a single expertise topic.\nDefine the topic validation process, product format, and launch strategy.\nWrite the sales email sequence, the launch webinar outline, and the evergreen funnel.\nInclude the customer support system that keeps refund rates under 3%.\nProject revenue at 6 and 12 months with monthly ad spend of $500.`},
+{cat:'Money',text:`Create a referral program that generates 30% of new revenue from existing clients.\nDefine the incentive structure, referral tracking system, and thank-you sequence.\nWrite the ask email, the shareable referral page copy, and the social proof element.\nInclude a reactivation campaign for clients who haven't referred in 90 days.\nProject ROI at 50 and 200 active clients.`},
+{cat:'Money',text:`Design a VIP day offer for a consultant: one day, $3,000–$10,000.\nDefine the day structure, deliverables, and pre-work requirements.\nWrite the sales page, the confirmation email, and the post-VIP day follow-up offer.\nInclude the add-on upsell at the end of the day.\nShow the revenue comparison between VIP days and hourly consulting.`},
+{cat:'Money',text:`Write a cold outreach strategy for landing a $5,000 consulting retainer in 30 days.\nDefine the target company size, decision-maker role, and pain point trigger.\nWrite a 3-email drip sequence with open-worthy subject lines.\nInclude a follow-up LinkedIn message and a no-pressure close.\nTrack metrics: open rate, reply rate, call booked rate.`},
+{cat:'Money',text:`Build a 12-month roadmap for a creator to go from $0 to $20K/month.\nBreak it into phases: validation, monetization, and scale.\nFor each phase, list the primary income source, secondary income source, and weekly time investment.\nInclude the exact moment to start paid traffic.\nProvide a month-by-month revenue projection with realistic assumptions.`},
+// Sales (20)
+{cat:'Sales',text:`Write a high-converting discovery call script for a $3,000 offer.\nStructure: rapport, diagnosis, consequence, solution reveal, price delivery, and close.\nInclude 5 open-ended questions that reveal the prospect's true pain.\nWrite 3 objection handlers for "I need to think about it."\nEnd with a clear next step that doesn't let the call die.`},
+{cat:'Sales',text:`Create a cold email sequence that books 5 sales calls per week from 100 contacts.\nEmail 1: pattern interrupt + problem statement.\nEmail 2: social proof + case study hook.\nEmail 3: direct ask + easy yes.\nInclude subject lines with projected open rates and a follow-up LinkedIn touchpoint.`},
+{cat:'Sales',text:`Design a sales funnel for a $997 course using only organic social traffic.\nDefine the content-to-click path, the lead magnet, and the 5-day email nurture.\nWrite the webinar registration copy and the post-webinar follow-up sequence.\nInclude the cart abandonment sequence.\nProject conversion at 3 list sizes: 500, 2,000, and 10,000.`},
+{cat:'Sales',text:`Act as a sales psychology expert. Write a proposal template that closes $10K+ deals.\nInclude: executive summary, problem diagnosis, proposed solution, investment, ROI, and next steps.\nFor each section, write the copy and explain the psychology behind it.\nInclude a visual pricing table and a risk reversal guarantee.\nShow how to present this on a 30-minute call.`},
+{cat:'Sales',text:`Build a LinkedIn outreach system that generates 10 qualified leads per week.\nDefine the connection request message, the value-first follow-up, and the soft offer introduction.\nWrite the 5-message sequence over 14 days.\nInclude profile optimization tips that prime prospects before they respond.\nTrack: connection rate, reply rate, and call booked rate.`},
+{cat:'Sales',text:`Create a VSL (video sales letter) script for a $497 digital product.\nStructure: hook, problem, agitate, solution, credibility, offer, stack, price reveal, guarantee, close.\nWrite each section with word count guidelines.\nInclude the thumbnail text, the first 15 seconds, and the call-to-action phrase.\nDefine the ideal video length and the drop-off prevention technique.`},
+{cat:'Sales',text:`Design a high-ticket sales conversation framework for a $5,000–$25,000 coaching offer.\nDefine the call stages: pre-call prep, opening, discovery, prescription, price, close.\nWrite the exact transition phrases between each stage.\nInclude 5 power questions that create buying momentum.\nShow how to handle the "send me more info" deflection.`},
+{cat:'Sales',text:`Create a sales objection bible for a $2,000 consulting package.\nDefine the 10 most common objections with context, root cause, and resolution.\nFor each, write a 2-3 sentence response that acknowledges and redirects.\nInclude an objection prevention strategy using pre-call content.\nEnd with a close technique that creates urgency without pressure.`},
+{cat:'Sales',text:`Write a webinar-to-sale conversion script that converts 10% of attendees to buyers.\nInclude: opening hook, credibility stack, content delivery, pivot to offer, price reveal, and Q&A strategy.\nDefine the slide structure and time allocation.\nWrite the post-webinar email sequence for buyers and non-buyers.\nInclude the replay strategy that adds 30% more revenue.`},
+{cat:'Sales',text:`Design a DM sales funnel for Instagram that closes $500–$2,000 offers.\nDefine the profile optimization, story CTA, and DM opener.\nWrite the 5-message conversation flow from stranger to buyer.\nInclude the qualifying question that saves time.\nShow the volume needed daily to hit $10K/month.`},
+{cat:'Sales',text:`Build a referral-based sales system that generates $30K/month.\nDefine the ask timing, referral incentive structure, and handoff process.\nWrite the referral request email, the landing page for referred prospects, and the introduction email template.\nInclude metrics: referral rate, conversion rate, and average deal size.\nShow the math from 20 active clients.`},
+{cat:'Sales',text:`Design a 7-day email launch sequence for a $297 online course.\nDay 1: problem agitation. Day 2: case study. Day 3: objection preemption.\nDay 4: offer introduction. Day 5: FAQ + social proof. Day 6: scarcity. Day 7: last call.\nWrite subject lines and preview text for each.\nInclude a segmentation strategy for buyers mid-sequence.`},
+{cat:'Sales',text:`Create a podcast guesting sales strategy that generates leads from every appearance.\nDefine the pitch email to podcast hosts, the bio that drives clicks, and the CTA during the episode.\nWrite the post-episode email nurture sequence for new subscribers.\nInclude how to turn one appearance into a content repurposing asset.\nShow the conversion math from listener to client.`},
+{cat:'Sales',text:`Build a case study template that converts cold prospects to warm leads.\nStructure: client before state, challenge, process, results, client quote, and CTA.\nWrite the case study email that gets it opened.\nInclude the LinkedIn post format for sharing the case study.\nDefine where to place case studies in the sales process for maximum effect.`},
+{cat:'Sales',text:`Design a flash offer strategy that generates $20K in 48 hours.\nDefine the offer structure: discount, bonus, or bundle.\nWrite the announcement email, the reminder sequence, and the last-chance email.\nInclude the social media post copy and story CTA.\nDefine the list size needed for this to work.`},
+{cat:'Sales',text:`Act as a conversion rate optimizer. Audit a checkout page and identify the 6 friction points.\nFor each, write the fix and the expected uplift.\nInclude trust signals, social proof placement, and form optimization tips.\nWrite new CTA button copy for 3 variants.\nShow how fixing the top 2 issues adds $50K revenue per year.`},
+{cat:'Sales',text:`Design a challenge funnel that sells a $997 course at the end.\nDefine the 5-day challenge topic, daily task structure, and momentum mechanics.\nWrite the sales presentation script for Day 5.\nInclude the email follow-up sequence for non-buyers.\nProject revenue at 200, 500, and 1,000 challenge participants.`},
+{cat:'Sales',text:`Write an upsell script for a post-purchase confirmation page.\nDefine the offer logic: complementary product, accelerated result, or done-for-you upgrade.\nWrite the 3-step conversation: acknowledge, bridge, present.\nInclude a one-click upsell page copy.\nShow the revenue impact at 10%, 20%, and 30% upsell take rates.`},
+{cat:'Sales',text:`Create a chatbot conversation flow that books sales calls automatically.\nDefine the entry point trigger, qualification questions, and calendar integration.\nWrite the opening message, the 4 qualification questions, and the booking confirmation.\nInclude the no-show prevention sequence.\nShow the conversion rate benchmarks from bot interaction to booked call.`},
+{cat:'Sales',text:`Write a 90-second elevator pitch for a $10,000 consulting package.\nInclude: the attention hook, the problem you solve, the result you deliver, and the call to action.\nWrite 3 variants: investor, potential client, and referral partner.\nInclude the follow-up card copy.\nDefine the metric that makes the pitch objectively measurable.`},
+// Content (20)
+{cat:'Content',text:`Write a 30-day LinkedIn content strategy for a B2B founder building thought leadership.\nDefine the 4 content pillars, post frequency, and format mix.\nWrite 5 hook variations for each pillar.\nInclude a comment engagement framework that drives profile visits.\nDefine the CTA rotation that converts readers to leads without spamming.`},
+{cat:'Content',text:`Create a YouTube video script structure for a 10-minute educational video.\nInclude: hook (0–30s), context (30–90s), content body, and CTA.\nWrite the opening hook for a personal finance topic.\nInclude pattern interrupts every 90 seconds.\nDefine the thumbnail concept and title formula that gets 7%+ CTR.`},
+{cat:'Content',text:`Design a newsletter content system that converts 5% of readers to buyers monthly.\nDefine the content ratio: 80% value, 20% offer.\nWrite 3 newsletter formats: story-based, tactical, and curated.\nInclude the subject line formula with the highest open rate.\nShow the revenue math from a 5,000-subscriber list at 5% conversion.`},
+{cat:'Content',text:`Build a 90-day blog content plan that ranks for buyer-intent keywords.\nDefine the keyword research framework, content format mix, and internal linking strategy.\nWrite the SEO brief template for a 2,000-word article.\nInclude the distribution checklist for each published post.\nShow traffic projections at 12 months with consistent publishing.`},
+{cat:'Content',text:`Write a Twitter/X thread formula that gets 500+ retweets on a business topic.\nDefine the hook tweet structure, the body tweet format, and the closing CTA tweet.\nWrite a sample 10-tweet thread on pricing strategy.\nInclude the reply engagement strategy that boosts algorithm reach.\nShow the best time to post and the repurposing plan after 24 hours.`},
+{cat:'Content',text:`Create a content repurposing system that turns 1 video into 12 pieces of content.\nMap the repurposing flow: video → transcript → blog → LinkedIn → email → short clips → infographic.\nWrite the SOPs for each transformation.\nInclude the tool stack and time investment per asset.\nShow the total reach multiplier vs. single-channel publishing.`},
+{cat:'Content',text:`Design a podcast episode content calendar for a 52-episode year.\nDefine the episode types: solo, interview, roundtable, and case study.\nWrite the guest outreach email template.\nInclude the show notes template and episode distribution checklist.\nDefine the 3 monetization touchpoints per episode.`},
+{cat:'Content',text:`Write a viral short-form video hook system for TikTok and Instagram Reels.\nDefine the 6 hook categories: shock, question, story, list, challenge, and transformation.\nWrite 3 examples per category in a business or finance niche.\nInclude the caption formula and hashtag strategy.\nShow the content cadence needed for consistent algorithm reach.`},
+{cat:'Content',text:`Create a brand storytelling framework for a SaaS founder building an audience.\nDefine the 5 core stories: origin, struggle, breakthrough, methodology, and vision.\nWrite a 200-word version of each story type.\nInclude the platform-specific adaptation guide: LinkedIn, Twitter, newsletter.\nShow how story-based content increases engagement vs. tactical content.`},
+{cat:'Content',text:`Build a ghostwriting business model for LinkedIn content.\nDefine the service packages, pricing tiers, and client intake process.\nWrite the ghostwriter-client interview questionnaire.\nInclude the editorial calendar template and the approval workflow.\nShow revenue at 5, 10, and 20 clients at different package levels.`},
+{cat:'Content',text:`Design an SEO content cluster strategy for a digital marketing agency.\nDefine the pillar page topic, 10 cluster article topics, and the internal linking map.\nWrite the meta description formula that improves CTR from search results.\nInclude the content upgrade strategy for each cluster article.\nShow the traffic compounding effect at 6 and 12 months.`},
+{cat:'Content',text:`Create an email newsletter growth strategy from 0 to 10,000 subscribers in 12 months.\nDefine the lead magnet, referral program, and cross-promotion tactics.\nWrite the welcome email sequence that reduces early churn.\nInclude the monthly growth audit template.\nShow the cost per subscriber across free and paid acquisition channels.`},
+{cat:'Content',text:`Build an AI-assisted content production system for a 3-person team.\nDefine the roles, the weekly content schedule, and the review workflow.\nWrite the content brief template and the quality checklist.\nInclude the publishing calendar format and the monthly performance review.\nShow output capacity: pieces per week and channel coverage.`},
+{cat:'Content',text:`Write a sales-focused Instagram carousel formula for a business coach.\nDefine the slide structure: hook, problem, insight 1, insight 2, insight 3, CTA.\nWrite a sample carousel on the topic "why most online courses fail."\nInclude the cover slide design brief and caption template.\nShow the engagement rate benchmarks for carousel posts.`},
+{cat:'Content',text:`Design a YouTube channel strategy that generates $10K/month from a 50K subscriber channel.\nDefine the niche focus, video formats, and monetization stack.\nWrite the channel description, about page, and 3 video titles for launch week.\nInclude the upload schedule and the community post strategy.\nShow revenue breakdown: AdSense, affiliate, digital products, sponsorships.`},
+{cat:'Content',text:`Create a social proof content system that builds trust at scale.\nDefine 5 social proof formats: testimonial, case study, data point, media mention, and before/after.\nWrite the collection template for each format.\nInclude the distribution calendar: where to post each type weekly.\nShow the conversion lift from systematic social proof publishing.`},
+{cat:'Content',text:`Build a Substack growth strategy from 0 to 5,000 paid subscribers in 18 months.\nDefine the free-to-paid conversion path, the referral program, and the cross-promotion strategy.\nWrite the paid tier benefits description and the upgrade email.\nInclude the content differentiation between free and paid tiers.\nShow the revenue at $10 and $20/month at 5,000 paid subscribers.`},
+{cat:'Content',text:`Design a media kit for a content creator with 25K newsletter subscribers.\nDefine the sections: audience stats, demographics, content formats, past sponsors, and rate card.\nWrite the introductory paragraph and the audience description.\nInclude the performance guarantee section.\nShow how a strong media kit increases deal value by 30%.`},
+{cat:'Content',text:`Write a long-form case study that converts cold readers to warm prospects.\nDefine the structure: context, challenge, solution, results, and CTA.\nWrite the opening paragraph that keeps readers scrolling.\nInclude the data visualization brief for the results section.\nShow where to distribute the case study for maximum sales impact.`},
+{cat:'Content',text:`Create a TikTok content strategy for a finance educator building to 100K followers.\nDefine the 3 content pillars, the hook formula, and the comment reply strategy.\nWrite 5 video concepts with hooks and scripts.\nInclude the duet and stitch strategy for algorithm growth.\nShow the monetization path from content to products.`},
+// Automation (20)
+{cat:'Automation',text:`Design a full lead generation automation system using Make.com and a CRM.\nDefine the triggers: form submission, ad click, and content download.\nMap the data flow from lead capture to CRM entry to email nurture to Slack notification.\nWrite the system prompt for the AI lead scoring layer.\nShow time saved per week vs. manual processing at 50, 200, and 1,000 leads/month.`},
+{cat:'Automation',text:`Build an AI-powered customer support automation stack that handles 80% of tickets without human intervention.\nDefine the intent categories, the escalation triggers, and the knowledge base structure.\nWrite the system prompt for the support AI agent.\nInclude the handoff protocol to a human agent.\nShow cost savings at 100, 500, and 2,000 monthly support tickets.`},
+{cat:'Automation',text:`Create a social media automation workflow that schedules 30 posts per week across 4 platforms.\nDefine the content ingestion, transformation, and scheduling pipeline.\nWrite the Make.com scenario structure.\nInclude the approval step that keeps a human in the loop.\nShow time savings vs. manual posting and the engagement benchmark comparison.`},
+{cat:'Automation',text:`Design an automated onboarding system for a SaaS product.\nDefine the trigger events: signup, first login, feature activation, and day 7 inactivity.\nWrite the in-app message and email for each trigger.\nInclude the Intercom or Customer.io setup guide.\nShow the activation rate improvement from manual to automated onboarding.`},
+{cat:'Automation',text:`Build a revenue reporting automation system for an e-commerce brand.\nDefine the data sources: Shopify, Google Analytics, Meta Ads, and email platform.\nMap the data aggregation workflow in a Google Sheet dashboard.\nWrite the weekly email summary template sent automatically every Monday.\nShow how this saves 5 hours/week of manual reporting.`},
+{cat:'Automation',text:`Create an AI-powered proposal generation system for a consulting firm.\nDefine the input form, the AI prompt chain, and the output template.\nWrite the system prompt that generates a customized 5-page proposal from a 10-question intake.\nInclude the review and send workflow.\nShow how this reduces proposal creation from 4 hours to 30 minutes.`},
+{cat:'Automation',text:`Design a lead scoring automation system for a B2B SaaS.\nDefine the scoring model: firmographic, behavioral, and intent signals.\nWrite the CRM automation rules for score thresholds.\nInclude the Slack alert format for high-score leads.\nShow the MQL-to-SQL conversion improvement from scored vs. unscored leads.`},
+{cat:'Automation',text:`Build an automated content curation and newsletter system.\nDefine the RSS feed aggregation, AI summarization, and email dispatch workflow.\nWrite the system prompt for the AI editorial filter.\nInclude the Make.com or Zapier blueprint.\nShow how to produce a 5-article curated newsletter in under 15 minutes.`},
+{cat:'Automation',text:`Create a churn prediction and intervention automation for a subscription business.\nDefine the early warning signals: login frequency, support tickets, feature usage drop.\nWrite the automated intervention email for each risk level: low, medium, high.\nInclude the Slack alert to the CS team for high-risk accounts.\nShow the churn reduction impact of early intervention vs. no intervention.`},
+{cat:'Automation',text:`Design an automated recruitment pipeline using Airtable and AI screening.\nDefine the application ingestion, the AI scoring prompt, and the shortlist criteria.\nWrite the auto-response email for each application status: received, shortlisted, rejected.\nInclude the interview scheduling automation.\nShow time saved from 200 applications processed manually vs. with this system.`},
+{cat:'Automation',text:`Build a competitor monitoring automation that sends daily intelligence reports.\nDefine the data sources: Google Alerts, social listening, pricing page checks, and SEO rank tracking.\nWrite the aggregation workflow in Make.com.\nInclude the AI synthesis prompt that extracts actionable insights.\nShow the format of the daily Slack or email digest.`},
+{cat:'Automation',text:`Create an invoice and payment automation system for a freelance business.\nDefine the contract-to-invoice flow, the payment reminder sequence, and the reconciliation process.\nWrite the overdue payment email templates: day 1, day 7, day 30.\nInclude the tool stack: Stripe, QuickBooks, and Zapier.\nShow the time saved per month and the late payment reduction rate.`},
+{cat:'Automation',text:`Design an AI writing assistant workflow for a content marketing team.\nDefine the brief ingestion, draft generation, editing, and publishing pipeline.\nWrite the system prompts for each stage: brief expansion, draft, SEO optimization, CTA insertion.\nInclude the human review checklist.\nShow the output increase: articles per week with and without the system.`},
+{cat:'Automation',text:`Build a client reporting automation for a digital agency with 20 clients.\nDefine the data sources, the report template, and the automated delivery schedule.\nWrite the Make.com workflow structure.\nInclude the client-facing dashboard setup in Looker Studio or Notion.\nShow the time saved per month and the client retention impact of consistent reporting.`},
+{cat:'Automation',text:`Create a product feedback collection and synthesis automation.\nDefine the feedback channels: NPS, in-app, support tickets, and review platforms.\nWrite the AI synthesis prompt that categorizes feedback by theme and sentiment.\nInclude the weekly digest format sent to the product team.\nShow how this reduces the feedback-to-feature cycle from 90 to 30 days.`},
+{cat:'Automation',text:`Design a social listening automation that identifies buying signals in real time.\nDefine the keywords, the platform coverage, and the alert logic.\nWrite the Make.com scenario that routes high-intent mentions to the sales team.\nInclude the response template for each signal type.\nShow the revenue generated from proactive outreach to buying-signal leads.`},
+{cat:'Automation',text:`Build a content repurposing automation pipeline using AI.\nDefine the source content ingestion, the transformation prompts, and the output formats.\nWrite the system prompt for extracting Twitter threads from a video transcript.\nInclude the platform-specific formatting rules.\nShow how 1 piece of content becomes 8 in under 30 minutes.`},
+{cat:'Automation',text:`Create a sales follow-up automation system that responds to inbound leads within 5 minutes.\nDefine the trigger: form fill, chatbot completion, or ad click.\nWrite the first response email and the 7-day multi-touch follow-up sequence.\nInclude the CRM deal creation and task assignment automation.\nShow the conversion rate difference between 5-minute and 24-hour response times.`},
+{cat:'Automation',text:`Design an automated webinar registration and follow-up system.\nDefine the registration flow, reminder sequence, and post-webinar automation.\nWrite the no-show re-engagement email and the attendee conversion sequence.\nInclude the replay page automation.\nShow the registration-to-sale conversion improvement from automated follow-up.`},
+{cat:'Automation',text:`Build a contract and proposal automation system for a service business.\nDefine the CRM-to-proposal generation, e-signature, and payment initiation workflow.\nWrite the proposal follow-up sequence.\nInclude the contract clause library and the version control system.\nShow how this reduces time-to-close from 14 to 5 days.`},
+];
+
+// ════════════════════════════════════════════════════════════
+// STATIC DATA — IDEAS (100)
+// ════════════════════════════════════════════════════════════
+const IDEAS=[
+{name:'AI Resume Rewriter Service',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Cold Email Personalization Agency',cat:'AI Services',difficulty:'Easy',profit:'High'},
+{name:'AI LinkedIn Profile Optimizer',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Chatbot Setup for Local Businesses',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Voice Clone Podcast Production',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Social Media Manager for Brands',cat:'AI Services',difficulty:'Easy',profit:'High'},
+{name:'AI Legal Document Summarization',cat:'AI Services',difficulty:'Medium',profit:'Very High'},
+{name:'AI Niche Market Research Reports',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Video Script Writing Service',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Ad Creative Generation Agency',cat:'AI Services',difficulty:'Medium',profit:'Very High'},
+{name:'AI Customer Persona Builder Tool',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Brand Naming Agency',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Sales Call Analysis Service',cat:'AI Services',difficulty:'Hard',profit:'Very High'},
+{name:'AI Competitive Intelligence Reports',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Content Audit and Strategy',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Product Description Writing',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Grant Writing Assistance',cat:'AI Services',difficulty:'Hard',profit:'Very High'},
+{name:'AI Personal Stylist App',cat:'AI Services',difficulty:'Hard',profit:'High'},
+{name:'AI Interview Coach Subscription',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI Newsletter Writing Service',cat:'AI Services',difficulty:'Easy',profit:'High'},
+{name:'AI Podcast Show Notes Service',cat:'AI Services',difficulty:'Easy',profit:'Medium'},
+{name:'AI Financial Planning Assistant',cat:'AI Services',difficulty:'Hard',profit:'Very High'},
+{name:'AI-Powered Hiring Screening Tool',cat:'AI Services',difficulty:'Hard',profit:'Very High'},
+{name:'AI Knowledge Base Builder for SaaS',cat:'AI Services',difficulty:'Medium',profit:'High'},
+{name:'AI SEO Content Brief Generator',cat:'AI Services',difficulty:'Easy',profit:'High'},
+{name:'LinkedIn Profile Template Pack',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Notion Business OS Template',cat:'Digital Products',difficulty:'Easy',profit:'High'},
+{name:'Plug-and-Play Sales Funnel Templates',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Email Swipe File Vault',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Pricing Strategy Workbook',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Founder Finance Spreadsheet Bundle',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Agency Proposal Template Library',cat:'Digital Products',difficulty:'Easy',profit:'High'},
+{name:'Social Media Hook Formula Database',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'SaaS Metrics Calculator',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Cold Outreach Script Library',cat:'Digital Products',difficulty:'Easy',profit:'High'},
+{name:'Digital Product Launch Playbook',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Freelancer Contract Template Bundle',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Content Repurposing SOPs Pack',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Offer Creation Workshop',cat:'Digital Products',difficulty:'Medium',profit:'Very High'},
+{name:'B2B Lead Gen Masterclass',cat:'Digital Products',difficulty:'Medium',profit:'Very High'},
+{name:'1-Page Business Plan Framework',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Newsletter Monetization Blueprint',cat:'Digital Products',difficulty:'Easy',profit:'High'},
+{name:'Webinar Script & Slide Template Pack',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'YouTube Channel Growth System',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'Micro-SaaS Validation Workbook',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Affiliate Program Launch Blueprint',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Personal Brand Starter Kit',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'90-Day Revenue Roadmap Template',cat:'Digital Products',difficulty:'Medium',profit:'High'},
+{name:'Productized Service Pricing Calculator',cat:'Digital Products',difficulty:'Easy',profit:'Medium'},
+{name:'High-Ticket Closing Script Bundle',cat:'Digital Products',difficulty:'Medium',profit:'Very High'},
+{name:'Zapier Agency for Small Businesses',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'Make.com Workflow Setup Service',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'Lead Follow-Up Automation System',cat:'Automation',difficulty:'Medium',profit:'Very High'},
+{name:'Auto-Invoicing and Payment Collection',cat:'Automation',difficulty:'Easy',profit:'Medium'},
+{name:'CRM Setup and Automation Agency',cat:'Automation',difficulty:'Medium',profit:'Very High'},
+{name:'Auto-Reporting Dashboard for Agencies',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'E-commerce Abandoned Cart Automation',cat:'Automation',difficulty:'Easy',profit:'High'},
+{name:'Podcast Production Automation Pipeline',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'AI Email Triage and Auto-Reply System',cat:'Automation',difficulty:'Hard',profit:'Very High'},
+{name:'Real Estate Lead Automation System',cat:'Automation',difficulty:'Medium',profit:'Very High'},
+{name:'Automated Client Onboarding System',cat:'Automation',difficulty:'Easy',profit:'High'},
+{name:'Social Proof Aggregation Automation',cat:'Automation',difficulty:'Easy',profit:'Medium'},
+{name:'Auto Content Repurposing Pipeline',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'Subscription Renewal Automation',cat:'Automation',difficulty:'Easy',profit:'High'},
+{name:'Competitor Monitoring Digest Service',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'HR and Recruitment Automation Stack',cat:'Automation',difficulty:'Hard',profit:'Very High'},
+{name:'Airtable Business System Builder',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'No-Code App Builder Consulting',cat:'Automation',difficulty:'Medium',profit:'Very High'},
+{name:'AI Proposal Generator Setup Service',cat:'Automation',difficulty:'Hard',profit:'Very High'},
+{name:'WhatsApp Business Automation Agency',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'Daily P&L Auto-Report for Founders',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'Review Request Automation System',cat:'Automation',difficulty:'Easy',profit:'High'},
+{name:'Content Calendar Automation System',cat:'Automation',difficulty:'Easy',profit:'Medium'},
+{name:'Customer Feedback Loop Automation',cat:'Automation',difficulty:'Medium',profit:'High'},
+{name:'LinkedIn Ghostwriting Retainer',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'Email Newsletter Writing Agency',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'YouTube Script Writing Service',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'B2B Case Study Writing Service',cat:'Content',difficulty:'Medium',profit:'Very High'},
+{name:'Podcast Interview Editing Service',cat:'Content',difficulty:'Medium',profit:'Medium'},
+{name:'SEO Blog Writing Subscription',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'Brand Storytelling Consulting',cat:'Content',difficulty:'Medium',profit:'Very High'},
+{name:'Twitter/X Thread Writing Service',cat:'Content',difficulty:'Easy',profit:'Medium'},
+{name:'SaaS Product Documentation Writing',cat:'Content',difficulty:'Medium',profit:'High'},
+{name:'Whitepaper and Report Writing',cat:'Content',difficulty:'Hard',profit:'Very High'},
+{name:'Content Repurposing Agency',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'Paid Newsletter Launch Consulting',cat:'Content',difficulty:'Medium',profit:'Very High'},
+{name:'Expert Interview Series Production',cat:'Content',difficulty:'Medium',profit:'High'},
+{name:'Personal Brand Content Strategy',cat:'Content',difficulty:'Medium',profit:'Very High'},
+{name:'Niche News Aggregator Newsletter',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'Course Content Writing Service',cat:'Content',difficulty:'Medium',profit:'High'},
+{name:'Substack Growth Consulting',cat:'Content',difficulty:'Easy',profit:'High'},
+{name:'Content Audit and Strategy Agency',cat:'Content',difficulty:'Medium',profit:'High'},
+{name:'Book Ghostwriting Service',cat:'Content',difficulty:'Hard',profit:'Very High'},
+{name:'Explainer Video Script Service',cat:'Content',difficulty:'Medium',profit:'High'},
+{name:'Thought Leadership Article Service',cat:'Content',difficulty:'Medium',profit:'Very High'},
+{name:'Instagram Caption Writing Retainer',cat:'Content',difficulty:'Easy',profit:'Medium'},
+{name:'Press Release Writing Service',cat:'Content',difficulty:'Easy',profit:'Medium'},
+{name:'Podcast Guest Pitch Template Kit',cat:'Content',difficulty:'Easy',profit:'Low'},
+{name:'Infographic Design Service',cat:'Content',difficulty:'Medium',profit:'Medium'},
+];
+
+// Restore saved API URL if present
+const savedApi = localStorage.getItem('money_dash_api');
+if (savedApi) { document.getElementById('api-url').value = savedApi; }
+</script>
+</body>
+</html>
